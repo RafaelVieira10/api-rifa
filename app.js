@@ -1,5 +1,4 @@
 const express = require('express')
-const morgan = require('morgan')
 const cartela = require('./src/routes/cartela')
 const bodyParser = require('body-parser')
 
@@ -23,6 +22,6 @@ app.use('/cartela', cartela);
 
 
 app.listen(3000, () => {
-    console.log('Servidor foi iniciado');
+    console.log('Servidor foi iniciado')
 })
 
