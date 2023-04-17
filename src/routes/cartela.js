@@ -14,7 +14,7 @@ router.post("/", (req, res) => {
     };
     conn.query(
       "INSERT INTO cartela (nome, status, situacao) VALUES (?,?,?)",
-      // [req.body.nome, req.body.status, req.body.situacao],
+      [req.body.nome, req.body.status, req.body.situacao],
       (error, resultado, field) => {
         conn.release();
         if (error) {
@@ -70,28 +70,45 @@ router.get("/:id_cartela", (req, res) => {
   });
 });
 
+router.delete("/:id_cartela", (req, res) => {
+  mysql.getConnection((error, conn) => {
+    if (error) {
+      return res.status(500).send({ error: error });
+    }
+    conn.query("DELETE FROM cartela WHERE id_cartela = ?;", 
+    [req.params.id_cartela],
+    (error, resultado, fields) => {
+      if (error) {
+        return res.status(500).send({ error: error });
+      }
+      res.status(200).send({
+        response: `ID: ${req.params.id_cartela} excluído com sucesso`,
+      });
+    });
+  });
+});
+
+
+router.put("/:id_cartela", (req, res) => {
+  mysql.getConnection((error, conn) => {
+   const {nome, status, situacao} = req.body
+   const id = req.params.id_cartela
+    if(error) {
+      return res.status(500).send({error: error});
+    }
+    console.log(req.body)
+    conn.query(
+      `UPDATE cartela SET nome = '${nome}', status = '${status}', situacao = '${situacao}' WHERE id_cartela = '${id}'`,
+      (error, resultado, fields) => {
+        if (error) {
+          return res.status(500).send({error : error});
+        }
+        res.status(200).send({
+          response: `ID ${id} alterado com sucesso`
+        })
+      }
+    )
+  })
+})
+
 module.exports = router;
-
-// método GET para puxar os dado(s) //
-// router.get('/:id',(req, res) => {
-//     console.log(`Id: ${req.params.id}`);
-//     res.send(`GET Id: ${req.params.id}`)
-// })
-
-// //método POST para adicionar os dado(s)
-// router.post('/:id', (req,res) => {
-//     console.log(req.body)
-//     res.send(`POST ID: ${req.params.id}`)
-// })
-
-// //método PUT para atualizar dado(s)
-// router.put('/:id', (req,res) => {
-//     console.log(req.body)
-//     res.send(`PUT ID: ${req.params.id}`)
-// })
-
-// // método DELETE para deletar os dado(s)
-// router.delete('/:id', (req,res) => {
-//     console.log(req.body)
-//     res.send(`DELETE ID: ${req.params.id}`)
-// })
