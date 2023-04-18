@@ -1,5 +1,6 @@
 const express = require('express')
 const cartela = require('./src/routes/cartela')
+const comprador = require('./src/routes/comprador')
 const bodyParser = require('body-parser')
 
 const app = express();
@@ -19,6 +20,7 @@ app.use((req, res, next) => {
 })
 
 app.use('/cartela', cartela);
+app.use('/comprador', comprador);
 
 
 app.listen(3000, () => {
