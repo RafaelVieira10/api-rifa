@@ -19,6 +19,9 @@ router.get("/", (req, res) => {
       }
       res.send({
         response: resultado,
+        request: {
+          tipo: "GET",
+        },
       });
     });
   });
@@ -41,8 +44,14 @@ router.get("/:id_comprador", (req, res) => {
             response: null,
           });
         }
+        if (resultado == "") {
+          res.status(422).send({mensagem : "Não possui dados nesse ID"})
+        }
         res.send({
           response: resultado,
+          request: {
+            tipo: "GET",
+          },
         });
       }
     );
@@ -59,10 +68,10 @@ router.post("/", (req, res) => {
     const data_compra = moment().format("DD/MM/YYYY hh:mm:ss");
 
     if (!nome) {
-      return res.status(422).send({ mensagem: "Nome é obrigatório" });
+      return res.status(422).send({ mensagem: "O nome é obrigatório" });
     }
     if (!telefone) {
-      return res.status(422).send({ mensagem: "Telefone é obrigatório" });
+      return res.status(422).send({ mensagem: "O telefone é obrigatório" });
     }
 
     if (telefone.length != 11) {
@@ -80,9 +89,12 @@ router.post("/", (req, res) => {
         }
         res.send({
           mensagem: "Dados inseridos com sucesso",
-          produtosInseridos: [
+          dadosComprador: [
             { nome: nome, telefone: telefone, data_compra: data_compra },
           ],
+          request: {
+            tipo: "POST",
+          },
         });
       }
     );
@@ -103,6 +115,9 @@ router.put("/:id_comprador", (req, res) => {
         if (!telefone) {
             return res.status(422).send({ mensagem: "Telefone é obrigatório" });
         }
+        if (telefone.length != 11) {
+          return res.status(422).send({ mensagem: "Telefone errado" });
+      }
         conn.query(
             `UPDATE comprador SET nome = '${nome}', telefone =  '${telefone}' WHERE id_comprador = '${id_comprador}'`,
             (error, resultado, fileds) => {
@@ -114,6 +129,9 @@ router.put("/:id_comprador", (req, res) => {
                 }
                 res.send({
                     mensagem: `Dado(s) do ID: ${id_comprador} alterado(s) com sucesso`,
+                    request: {
+                      tipo: "PUT",
+                    },
                 });
             }
         );
@@ -137,7 +155,10 @@ router.delete("/:id_comprador", (req, res) => {
                     })
                 }
                 res.send({
-                    mensagem : `Dados do ID '${id_comprador} excluídos com sucesso'`
+                    mensagem : `Dados do ID '${id_comprador} excluídos com sucesso'`,
+                    request: {
+                      tipo: "DELETE",
+                    },
                 });
             }
         );
