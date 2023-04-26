@@ -2,6 +2,66 @@ const express = require("express");
 const router = express.Router();
 const mysql = require("../../mysql").pool;
 
+//ROTA QUE TRAZ TODAS AS RIFAS DISPONIVEIS
+router.get("/:disponivel", (req, res) => {
+  mysql.getConnection((error, conn) => {
+    if(error) {
+      res.status(500).send({error: error})
+    }
+    const paramDisponivel = req.params.disponivel;
+    conn.query(
+      `SELECT * FROM cartela WHERE status = "${paramDisponivel}";`,
+      (error, resultado, fields) => {
+        if (error) {
+          res.status(500).send({error : error})
+        }
+        res.status(200).send({
+          cartela : resultado
+        })
+      }
+    )
+  })
+})
+
+//ROTA QUE TRAZ TODAS AS RIFAS VENDIDAS
+router.get("/:vendida", (req, res) => {
+  mysql.getConnection((error, conn) => {
+    if(error) {
+      res.status(500).send({error: error})
+    }
+    const paramVendida = req.params.vendida;
+    conn.query(
+      `SELECT * FROM cartela INNER JOIN comprador ON comprador.id_comprador = cartela.id_cartela WHERE status = "${paramVendida}";`,
+      (error, resultado, fields) => {
+        if (error) {
+          res.status(500).send({error : error})
+        }
+        res.status(200).send({
+          response: {
+            cartela: resultado.map((result) => {
+              return {
+                id_cartela: result.id_cartela,
+                nome: result.nome,
+                status: result.status,
+                situacao: result.situacao,
+                comprador: {
+                  id_comprador: result.id_comprador,
+                  nome: result.nome_comprador,
+                  telefone: result.telefone,
+                  data_compra: result.data_compra,
+                  request: {
+                    tipo: "GET",
+                  },
+                },
+              };
+            }),
+          },
+        })
+      }
+    )
+  })
+})
+
 //ROTA QUE TRAZ TODOS OS DADOS DO BANCO
 router.get("/", (req, res) => {
   mysql.getConnection((error, conn) => {
@@ -27,7 +87,7 @@ router.get("/", (req, res) => {
                 situacao: result.situacao,
                 comprador: {
                   id_comprador: result.id_comprador,
-                  nome: result.nome,
+                  nome: result.nome_comprador,
                   telefone: result.telefone,
                   data_compra: result.data_compra,
                   request: {
