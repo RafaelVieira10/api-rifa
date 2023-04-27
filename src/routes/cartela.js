@@ -2,106 +2,130 @@ const express = require("express");
 const router = express.Router();
 const mysql = require("../../mysql").pool;
 
-//ROTA QUE TRAZ TODAS AS RIFAS DISPONIVEIS
-router.get("/:disponivel", (req, res) => {
-  mysql.getConnection((error, conn) => {
-    if(error) {
-      res.status(500).send({error: error})
-    }
-    const paramDisponivel = req.params.disponivel;
-    conn.query(
-      `SELECT * FROM cartela WHERE status = "${paramDisponivel}";`,
-      (error, resultado, fields) => {
-        if (error) {
-          res.status(500).send({error : error})
-        }
-        res.status(200).send({
-          cartela : resultado
-        })
-      }
-    )
-  })
-})
 
 //ROTA QUE TRAZ TODAS AS RIFAS VENDIDAS
-router.get("/:vendida", (req, res) => {
-  mysql.getConnection((error, conn) => {
-    if(error) {
-      res.status(500).send({error: error})
-    }
-    const paramVendida = req.params.vendida;
-    conn.query(
-      `SELECT * FROM cartela INNER JOIN comprador ON comprador.id_comprador = cartela.id_cartela WHERE status = "${paramVendida}";`,
-      (error, resultado, fields) => {
-        if (error) {
-          res.status(500).send({error : error})
-        }
-        res.status(200).send({
-          response: {
-            cartela: resultado.map((result) => {
-              return {
-                id_cartela: result.id_cartela,
-                nome: result.nome,
-                status: result.status,
-                situacao: result.situacao,
-                comprador: {
-                  id_comprador: result.id_comprador,
-                  nome: result.nome_comprador,
-                  telefone: result.telefone,
-                  data_compra: result.data_compra,
-                  request: {
-                    tipo: "GET",
-                  },
-                },
-              };
-            }),
-          },
-        })
-      }
-    )
-  })
-})
-
-//ROTA QUE TRAZ TODOS OS DADOS DO BANCO
 router.get("/", (req, res) => {
   mysql.getConnection((error, conn) => {
     if (error) {
       return res.status(500).send({ error: error });
     }
-    conn.query(
-      `SELECT * FROM cartela INNER JOIN comprador ON comprador.id_comprador = cartela.id_cartela;`,
-      (error, resultado, fields) => {
+    const { status } = req.query;
+    if (status == "vendida") {
+      conn.query(
+        `SELECT * FROM cartela INNER JOIN comprador ON comprador.id_comprador = cartela.id_cartela WHERE status = "${status}";`,
+         (error, resultado, fields) => {
+          conn.release();
         if (error) {
-          res.status(500).send({
+          return res.status(500).send({ error: error });
+        }
+        return res.status(200).send({
+          cartela: resultado.map((result) => {
+            return {
+              id_cartela: result.id_cartela,
+              nome: result.nome,
+              status: result.status,
+              situacao: result.situacao,
+              comprador: {
+                id_comprador: result.id_comprador,
+                nome: result.nome_comprador,
+                telefone: result.telefone,
+                data_compra: result.data_compra,
+                request: {
+                  tipo: "GET",
+                },
+              },
+            };
+          }),
+        });
+      });
+    }
+    if (status == "disponivel") {
+      conn.query(
+        `SELECT * FROM cartela WHERE status = "${status}";`,
+        (error, resultado, fields) => {
+          conn.release();
+          if (error) {
+            return res.status(500).send({ error: error });
+          }
+          return res.status(200).send({
+            cartela: resultado,
+          });
+        }
+      );
+    }
+    conn.query(
+      `SELECT * FROM cartela;`,
+      (error, resultado, fields) => {
+        conn.release();
+        if (error) {
+          return res.status(500).send({
             error: error,
             response: null,
           });
         }
-        res.status(200).send({
-          response: {
-            cartela: resultado.map((result) => {
-              return {
-                id_cartela: result.id_cartela,
-                nome: result.nome,
-                status: result.status,
-                situacao: result.situacao,
-                comprador: {
-                  id_comprador: result.id_comprador,
-                  nome: result.nome_comprador,
-                  telefone: result.telefone,
-                  data_compra: result.data_compra,
-                  request: {
-                    tipo: "GET",
-                  },
+        return res.status(200).send({
+          cartela: resultado.map((result) => {
+            return {
+              id_cartela: result.id_cartela,
+              nome: result.nome,
+              status: result.status,
+              situacao: result.situacao,
+              comprador: {
+                id_comprador: result.id_comprador,
+                nome: result.nome_comprador,
+                telefone: result.telefone,
+                data_compra: result.data_compra,
+                request: {
+                  tipo: "GET",
                 },
-              };
-            }),
-          },
+              },
+            };
+          }),
         });
       }
     );
   });
 });
+
+// //ROTA QUE TRAZ TODOS OS DADOS DO BANCO
+// router.get("/", (req, res) => {
+//   mysql.getConnection((error, conn) => {
+//     if (error) {
+//       return res.status(500).send({ error: error });
+//     }
+//     conn.query(
+//       `SELECT * FROM cartela INNER JOIN comprador ON comprador.id_comprador = cartela.id_cartela;`,
+//       (error, resultado, fields) => {
+//         conn.release();
+//         if (error) {
+//           res.status(500).send({
+//             error: error,
+//             response: null,
+//           });
+//         }
+//         res.status(200).send({
+//           cartela: resultado.map((result) => {
+//             return {
+//               id_cartela: result.id_cartela,
+//               nome: result.nome,
+//               status: result.status,
+//               situacao: result.situacao,
+//               comprador: {
+//                 id_comprador: result.id_comprador,
+//                 nome: result.nome_comprador,
+//                 telefone: result.telefone,
+//                 data_compra: result.data_compra,
+//                 request: {
+//                   tipo: "GET",
+//                 },
+//               },
+//             };
+//           }),
+//         });
+//       }
+//     );
+//   });
+// });
 
 //ROTA QUE TRAZ OS DADOS DE UM ID ESPECIFICO
 router.get("/:id_cartela", (req, res) => {
@@ -113,29 +137,28 @@ router.get("/:id_cartela", (req, res) => {
     conn.query(
       `SELECT * FROM cartela INNER JOIN comprador ON comprador.id_comprador = cartela.id_cartela WHERE id_cartela = '${id_cartela}';`,
       (error, resultado, fields) => {
+        conn.release();
         if (error) {
           return res.status(500).send({ error: error });
         }
-        res.status(200).send({
-          response: {
-            cartela: resultado.map((result) => {
-              return {
-                id_cartela: result.id_cartela,
+        return res.status(200).send({
+          cartela: resultado.map((result) => {
+            return {
+              id_cartela: result.id_cartela,
+              nome: result.nome,
+              status: result.status,
+              situacao: result.situacao,
+              comprador: {
+                id_comprador: result.id_comprador,
                 nome: result.nome,
-                status: result.status,
-                situacao: result.situacao,
-                comprador: {
-                  id_comprador: result.id_comprador,
-                  nome: result.nome,
-                  telefone: result.telefone,
-                  data_compra: result.data_compra,
-                  request: {
-                    tipo: "GET",
-                  },
+                telefone: result.telefone,
+                data_compra: result.data_compra,
+                request: {
+                  tipo: "GET",
                 },
-              };
-            }),
-          },
+              },
+            };
+          }),
         });
       }
     );
@@ -161,7 +184,11 @@ router.post("/", (req, res) => {
 
     if (status == "disponivel") {
       if (situacao == "paga") {
-        return res.status(422).send({ mensagem: "ERRO : Situação = paga, mas a rifa está disponivel" });
+        return res
+          .status(422)
+          .send({
+            mensagem: "ERRO : Situação = paga, mas a rifa está disponivel",
+          });
       }
     }
     conn.query(
@@ -169,16 +196,15 @@ router.post("/", (req, res) => {
       (error, resultado, field) => {
         conn.release();
         if (error) {
-          res.status(500).send({
+          return res.status(500).send({
             error: error,
             response: null,
           });
         }
-        res.send({
+        return res.send({
           mensagem: "Dados inseridos com sucesso",
           produtosInseridos: [
             { nome: nome, status: status, situacao: situacao },
-            
           ],
           request: {
             tipo: "POST",
@@ -201,10 +227,11 @@ router.put("/:id_cartela", (req, res) => {
     conn.query(
       `UPDATE cartela SET nome = '${nome}', status = '${status}', situacao = '${situacao}' WHERE id_cartela = '${id}'`,
       (error, resultado, fields) => {
+        conn.release();
         if (error) {
           return res.status(500).send({ error: error });
         }
-        res.status(200).send({
+        return res.status(200).send({
           response: `Dado(s) do ID ${id} alterado(s) com sucesso`,
           request: {
             tipo: "PUT",
@@ -225,10 +252,11 @@ router.delete("/:id_cartela", (req, res) => {
       "DELETE FROM cartela WHERE id_cartela = ?;",
       [req.params.id_cartela],
       (error, resultado, fields) => {
+        conn.release();
         if (error) {
           return res.status(500).send({ error: error });
         }
-        res.status(200).send({
+        return res.status(200).send({
           response: `ID: ${req.params.id_cartela} excluído com sucesso`,
           request: {
             tipo: "DELETE",
